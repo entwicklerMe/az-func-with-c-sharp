@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using EW.Pets.Models;
+using EW.Pets.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -21,7 +22,8 @@ namespace EW.Pets
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "pets")]
             HttpRequest req, ILogger log)
         {
-            var pets = new List<string> {"Hamster", "Kaninchen", "Maus", "Katze"};
+            var repo = new Repository();
+            var pets = await repo.GetPets();
 
             return new OkObjectResult(new { pets = pets});
         }
@@ -34,7 +36,11 @@ namespace EW.Pets
             string requestBody = await req.Content.ReadAsStringAsync();
             Pet pet = JsonConvert.DeserializeObject<Pet>(requestBody);
             
-            return new OkObjectResult(pet.Name);
+            var repo = new Repository();
+            repo.Save(pet: pet);
+
+            var result = new OkObjectResult(pet) {StatusCode = 201};
+            return result;
         }
     }
 }
